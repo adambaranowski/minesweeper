@@ -9,7 +9,7 @@
 2. Send data in JSON format: 
     ```json
     {
-      "username": NAME
+      "username": "NAME"
     }
     ```
     
@@ -77,9 +77,9 @@
        "room_members": 
            [
                {
-                 'session_id': "USER_SESSION_ID <string>", 
-                 'username': "NAME <string>", 
-                 'score': "SCORE <int>"
+                 "session_id': "USER_SESSION_ID <string>", 
+                 "username': "NAME <string>", 
+                 "score': "SCORE <int>"
                }
            ], 
        "start_countdown": "TRUE_WHEN_GAME_STARTS <bool>", 
