@@ -1,8 +1,8 @@
-#MINESWEEPER 
+# MINESWEEPER 
 
-##SERVER
+## SERVER
 
-###Workflow
+### Workflow
 
 1. Open a connection.
 
