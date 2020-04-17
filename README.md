@@ -25,7 +25,11 @@
     - **CREATE_ROOM**
     ```json
        {
-        "request": "CREATE_ROOM"
+           "request": "CREATE_ROOM", 
+           "data": {
+                 "name": "ROOM_NAME<string>", 
+                 "size": "MAX_PLAYERS<int>"
+                 }
        }
     ``` 
     - **JOIN_ROOM**
