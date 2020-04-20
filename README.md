@@ -25,8 +25,16 @@
     - **CREATE_ROOM**
     ```json
        {
+<<<<<<< HEAD
         "request": "CREATE_ROOM",
         "data": "ROOM_NAME <string>"
+=======
+           "request": "CREATE_ROOM", 
+           "data": {
+                 "name": "ROOM_NAME<string>", 
+                 "size": "MAX_PLAYERS<int>"
+                 }
+>>>>>>> 744b03c82afe42ed4f132092deec981c48f339a6
        }
     ``` 
     On success server replies with:
@@ -88,8 +96,14 @@
        "room_members": 
            [
                {
+<<<<<<< HEAD
                  "session_id": "USER_SESSION_ID <string>", 
                  "username": "NAME <string>"
+=======
+                 "session_id': "USER_SESSION_ID <string>", 
+                 "username': "NAME <string>", 
+                 "score': "SCORE <int>"
+>>>>>>> 744b03c82afe42ed4f132092deec981c48f339a6
                }
            ], 
        "start_countdown": "TRUE_WHEN_GAME_STARTS <bool>", 
