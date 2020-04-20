@@ -9,7 +9,7 @@
 2. Send data in JSON format: 
     ```json
     {
-      "username": NAME
+      "username": "NAME"
     }
     ```
     
@@ -25,9 +25,19 @@
     - **CREATE_ROOM**
     ```json
        {
-        "request": "CREATE_ROOM"
+        "request": "CREATE_ROOM",
+        "data": "ROOM_NAME <string>"
        }
     ``` 
+    On success server replies with:
+    ```json
+       {
+        "message": "OK",
+        "room_id": "ROOM_ID <int>"
+       }
+    ``` 
+    If ID is taken then message = "ID_TAKEN"
+       
     - **JOIN_ROOM**
     ```json
        {
@@ -49,6 +59,7 @@
         [
            {
              "room_id": "ROOM_ID<int>",
+             "room_name": "ROOM_NAME<string>",
              "players": "NUMBER_OF_MEMBERS<int>",
              "max_players": "MAX_PLAYERS<int>"
            }   
@@ -77,9 +88,8 @@
        "room_members": 
            [
                {
-                 'session_id': "USER_SESSION_ID <string>", 
-                 'username': "NAME <string>", 
-                 'score': "SCORE <int>"
+                 "session_id": "USER_SESSION_ID <string>", 
+                 "username": "NAME <string>"
                }
            ], 
        "start_countdown": "TRUE_WHEN_GAME_STARTS <bool>", 
