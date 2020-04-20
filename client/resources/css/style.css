@@ -1,0 +1,35 @@
+.anchorPane{
+    -fx-background-color: lightgrey;
+
+
+}
+
+.bigLabel{
+    -fx-font-family: "Calibri Light";
+    -fx-font-size: 60px;
+    -fx-opacity: 0.80;
+}
+
+.menuButton{
+    -fx-opacity: 0.90;
+    -fx-background-radius: 10px;
+    -fx-font-family: "Arial";
+    -fx-font-size: 20px;
+}
+
+.minorLabel{
+    -fx-font-family: "Calibri Light";
+    -fx-font-size: 30px;
+    -fx-opacity: 0.80;
+}
+
+.minorMinorLabel{
+    -fx-font-family: "Calibri Light";
+    -fx-font-size: 20px;
+    -fx-opacity: 0.90;
+}
+
+.table-view .column-header {
+    -fx-background-color: transparent;
+    -fx-font-size: 14px;
+}
