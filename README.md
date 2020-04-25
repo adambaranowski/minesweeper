@@ -23,122 +23,116 @@
    
 3. *pre_lobby* state - 3 requests
     - **CREATE_ROOM**
-    ```json
-       {
-<<<<<<< HEAD
-        "request": "CREATE_ROOM",
-        "data": "ROOM_NAME <string>"
-=======
-           "request": "CREATE_ROOM", 
-           "data": {
-                 "name": "ROOM_NAME<string>", 
-                 "size": "MAX_PLAYERS<int>"
-                 }
->>>>>>> 744b03c82afe42ed4f132092deec981c48f339a6
-       }
-    ``` 
-    On success server replies with:
-    ```json
-       {
-        "message": "OK",
-        "room_id": "ROOM_ID <int>"
-       }
-    ``` 
-    If ID is taken then message = "ID_TAKEN"
+        ```json
+           {
+            "request": "CREATE_ROOM",
+            "data": "ROOM_NAME <string>"
+           }
+        ``` 
+        On success server replies with:
+        ```json
+           {
+            "message": "OK",
+            "room_id": "ROOM_ID <int>"
+           }
+        ``` 
+        If ID is taken then message = "ID_TAKEN"
        
     - **JOIN_ROOM**
-    ```json
-       {
-        "request": "JOIN_ROOM",
-        "data": "ROOM_ID <int>"
-       }
-    ``` 
-   - **ALL_ROOMS**
-    ```json
-       {
-        "request": "ALL_ROOMS"
-       }
-    ```    
-   On success server replies with:
-    ```json
-       {
-        "message": "OK",
-        "data": 
-        [
+        ```json
            {
-             "room_id": "ROOM_ID<int>",
-             "room_name": "ROOM_NAME<string>",
-             "players": "NUMBER_OF_MEMBERS<int>",
-             "max_players": "MAX_PLAYERS<int>"
-           }   
-        ]
-       }
-    ```    
+            "request": "JOIN_ROOM",
+            "data": "ROOM_ID <int>"
+           }
+        ``` 
+   - **ALL_ROOMS**
+        ```json
+           {
+            "request": "ALL_ROOMS"
+           }
+        ```    
+       On success server replies with:
+        ```json
+           {
+            "message": "OK",
+            "data": 
+            [
+               {
+                 "room_id": "ROOM_ID<int>",
+                 "room_name": "ROOM_NAME<string>",
+                 "players": "NUMBER_OF_MEMBERS<int>",
+                 "max_players": "MAX_PLAYERS<int>"
+               }   
+            ]
+           }
+        ```    
    
 
 4. *in_lobby* - 2 lobby member requests + lobby host requests
     - **GET_INFO**
-    ```json
-       {
-        "request": "GET_INFO"
-       }    
-    ```
-    On success server replies with:
-    ```json
-    {
-       "message": "OK", 
-       "data": "room_info"
-    }
-    ```
-    *room_info* looks something like this:
-    ```json
-    {
-       "room_members": 
-           [
-               {
-<<<<<<< HEAD
-                 "session_id": "USER_SESSION_ID <string>", 
-                 "username": "NAME <string>"
-=======
-                 "session_id': "USER_SESSION_ID <string>", 
-                 "username': "NAME <string>", 
-                 "score': "SCORE <int>"
->>>>>>> 744b03c82afe42ed4f132092deec981c48f339a6
-               }
-           ], 
-       "start_countdown": "TRUE_WHEN_GAME_STARTS <bool>", 
-       "host_id": "HOST_SESSION_ID <string>"
-    }
-    ```
+        ```json
+           {
+            "request": "GET_INFO"
+           }    
+        ```
+        On success server replies with:
+        ```json
+        {
+           "message": "OK", 
+           "data": "room_info"
+        }
+        ```
+        *room_info* looks something like this:
+        ```json
+        {
+           "room_members": 
+               [
+                   {
+                     "session_id": "USER_SESSION_ID <string>", 
+                     "username": "NAME <string>"
+                   }
+               ], 
+           "start_countdown": "TRUE_WHEN_GAME_STARTS <bool>", 
+           "host_id": "HOST_SESSION_ID <string>"
+        }
+        ```
    
    - **LEAVE_ROOM**
-    ```json
-       {
-         "request": "LEAVE_ROOM"
-       }    
-    ```
-   On success client goes back to *pre_lobby*.
+        ```json
+           {
+             "request": "LEAVE_ROOM"
+           }    
+        ```
+       On success client goes back to *pre_lobby*.
    
    **HOST REQUESTS**
    - **START_GAME**
-    ```json
-       {
-         "request": "START_GAME"
-       }    
-    ```
+        ```json
+           {
+             "request": "START_GAME",
+             "data": "MAP<string>"
+           }    
+        ```
 
    - **KICK_PLAYER**
-    ```json
-       {
-         "request": "KICK_PLAYER",
-         "data": "PLAYER_SESSION_ID"
-       }    
-    ```
+        ```json
+           {
+             "request": "KICK_PLAYER",
+             "data": "PLAYER_SESSION_ID"
+           }    
+        ```
    
    - **SET_SIZE**
-    ```json
-       {
-         "request": "SET_SIZE",
-         "data": "MAP_SIZE<int>"
-       }    
-    ```
+        ```json
+           {
+             "request": "SET_SIZE",
+             "data": "MAP_SIZE<int>"
+           }    
+        ```
+    - **SET_LIMIT**
+        ```json
+           {
+             "request": "SET_LIMIT",
+             "data": "PLAYERS_LIMIT <int>"
+           }    
+        ```
