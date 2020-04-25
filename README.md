@@ -171,3 +171,14 @@
                 "host_id": "HOST_ID<string>"
             }
         ```
+    - **GET_MAP**
+        ```json
+            {
+                "message": "OK", 
+                "data": 
+                    {
+                        "map": "MAP<string>", 
+                        "size": "SIZE<int>"
+                    }
+            }
+        ```
