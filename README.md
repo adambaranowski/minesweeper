@@ -66,7 +66,6 @@
             ]
            }
         ```    
-   
 
 4. *in_lobby* - 2 lobby member requests + lobby host requests
     - **GET_INFO**
@@ -129,10 +128,46 @@
              "data": "MAP_SIZE<int>"
            }    
         ```
-    - **SET_LIMIT**
+   - **SET_TIME**
+        ```json
+           {
+             "request": "SET_TIME",
+             "data": "GAME_DURATION_IN_SECS<int>"
+           }    
+        ```
+   - **SET_LIMIT**
         ```json
            {
              "request": "SET_LIMIT",
              "data": "PLAYERS_LIMIT <int>"
            }    
+        ```
+      
+5. *in_game* - actual game
+    - **GET_INFO**
+        ```json
+           {
+            "request": "GET_INFO"
+           }    
+        ```
+        On success server replies with:
+        ```json
+            {
+                "message": "OK", 
+                "data": "room_info <defined below>"
+            }
+        ```
+        *room_info*:
+        ```json
+            {
+                "room_members": [
+                       {
+                         "session_id": "USER_SESSION_ID <string>", 
+                         "username": "NAME <string>",
+                         "score": "SCORE<int>"
+                       }
+                   ], 
+                "time_left": "TIME_LEFT_IN_SECS <int>", 
+                "host_id": "HOST_ID<string>"
+            }
         ```
