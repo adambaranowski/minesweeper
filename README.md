@@ -135,13 +135,6 @@
              "data": "GAME_DURATION_IN_SECS<int>"
            }    
         ```
-   - **SET_LIMIT**
-        ```json
-           {
-             "request": "SET_LIMIT",
-             "data": "PLAYERS_LIMIT <int>"
-           }    
-        ```
       
 5. *in_game* - actual game
     - **GET_INFO**
