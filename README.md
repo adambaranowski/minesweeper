@@ -181,11 +181,23 @@
                     }
             }
         ```
-    - **UPDATE_SCORE**
+    - **UPDATE_SCORE** - float in range 0-1.
         ```json
             {
                 "request": "UPDATE_SCORE", 
                 "data": "NEW_SCORE<double>"
+            }
+        ```
+        Server reply:
+        ```json
+            {
+                "message": "OK"
+            }
+        ```
+    - **LOST** - when player clicked on a bomb
+        ```json
+            {
+                "request": "LOST"
             }
         ```
         Server reply:
