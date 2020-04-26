@@ -166,6 +166,12 @@
         ```
     - **GET_MAP**
         ```json
+           {
+              "request": "GET_MAP"
+           }    
+        ```    
+        Server reply:
+        ```json
             {
                 "message": "OK", 
                 "data": 
@@ -173,5 +179,18 @@
                         "map": "MAP<string>", 
                         "size": "SIZE<int>"
                     }
+            }
+        ```
+    - **UPDATE_SCORE**
+        ```json
+            {
+                "request": "UPDATE_SCORE", 
+                "data": "NEW_SCORE<double>"
+            }
+        ```
+        Server reply:
+        ```json
+            {
+                "message": "OK"
             }
         ```
