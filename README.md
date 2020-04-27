@@ -88,7 +88,8 @@
                [
                    {
                      "session_id": "USER_SESSION_ID <string>", 
-                     "username": "NAME <string>"
+                     "username": "NAME <string>",
+                     "total_score":"PLAYER_TOTAL_SCORE<int>"
                    }
                ], 
            "start_countdown": "TRUE_WHEN_GAME_STARTS <bool>", 
