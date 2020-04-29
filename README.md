@@ -88,8 +88,7 @@
                [
                    {
                      "session_id": "USER_SESSION_ID <string>", 
-                     "username": "NAME <string>",
-                     "total_score":"PLAYER_TOTAL_SCORE<int>"
+                     "username": "NAME <string>"
                    }
                ], 
            "start_countdown": "TRUE_WHEN_GAME_STARTS <bool>", 
@@ -110,7 +109,11 @@
         ```json
            {
              "request": "START_GAME",
-             "data": "MAP<string>"
+             "data": 
+               {    
+                 "map": "MAP<string>",
+                 "start_point": "POINT" 
+               }  
            }    
         ```
 
@@ -178,7 +181,8 @@
                 "data": 
                     {
                         "map": "MAP<string>", 
-                        "size": "SIZE<int>"
+                        "size": "SIZE<int>",
+                        "start_point": "START_POINT"
                     }
             }
         ```
