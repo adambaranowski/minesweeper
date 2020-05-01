@@ -1,21 +1,29 @@
 package pl.adambaranowski.minesweeper.controller.multi;
 
+import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.Stage;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
-import pl.adambaranowski.minesweeper.functions.SceneChanger;
-import pl.adambaranowski.minesweeper.functions.WebSocketConnector;
+import pl.adambaranowski.minesweeper.board.Board;
+import pl.adambaranowski.minesweeper.functions.RequestSender;
+import pl.adambaranowski.minesweeper.functions.Scenes;
+import pl.adambaranowski.minesweeper.functions.ScenesChanger;
 import pl.adambaranowski.minesweeper.utils.Player;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class HostLobbyPaneController extends SceneChanger {
+public class HostLobbyPaneController implements ScenesChanger, RequestSender {
 
     @FXML
     private Label bombsCountLabel;
@@ -65,8 +73,6 @@ public class HostLobbyPaneController extends SceneChanger {
     @FXML
     private Label gameCounterLabel;
 
-    @FXML
-    private Label roomNameLabel;
 
     @FXML
     private TableView<Player> playersTable;
@@ -85,9 +91,12 @@ public class HostLobbyPaneController extends SceneChanger {
     private int maxBombsCount;
     private final int MIN_BOMBS_COUNT = 1;
 
+    Thread refresh;
+    Task refreshingTask;
+
     private final String PLAYER_NAME_COLUMN = "Player";
-    private final String PLAYER_TIME_COLUMN = "Time";
-    private final String PLAYER_PERCENTAGE_COLUMN = "Board %";
+    private final String PLAYER_TOTAL_COLUMN = "Total %";
+    private final String PLAYER_SCORE_COLUMN = "Board %";
 
 
     public void initialize() {
@@ -99,44 +108,54 @@ public class HostLobbyPaneController extends SceneChanger {
         gameCounterLabel.setVisible(false);
         configureTableColumns();
 
-        Thread refresh = new Thread(refreshingTask);
+        startTask();
+    }
+
+
+    private void startTask() {
+        newTask();
+        refresh = new Thread(refreshingTask);
         refresh.setDaemon(true);
         refresh.start();
     }
 
-    Task refreshingTask = new Task() {
-        @Override
-        protected Object call() throws Exception {
-            while (true) {
-                if (isCancelled()) {
-                    break;
-                }
-                updateTable();
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
+    private void stopTask() {
+        refreshingTask.cancel();
+    }
 
+    private void newTask() {
+        refreshingTask = new Task() {
+            @Override
+            protected Object call() throws Exception {
+                while (true) {
+                    if (isCancelled()) {
+                        break;
+                    }
+                    updateTable();
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                    }
                 }
+                return null;
             }
-            return null;
-        }
-    };
-
+        };
+    }
 
     private void configureTableColumns() {
 
         TableColumn<Player, String> playerNameColumn = new TableColumn<Player, String>(PLAYER_NAME_COLUMN);
         playerNameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
 
-        TableColumn<Player, String> playerTimeColumn = new TableColumn<Player, String>(PLAYER_TIME_COLUMN);
-        playerTimeColumn.setCellValueFactory(new PropertyValueFactory<>("time"));
+        TableColumn<Player, String> playerTotalColumn = new TableColumn<Player, String>(PLAYER_TOTAL_COLUMN);
+        playerTotalColumn.setCellValueFactory(new PropertyValueFactory<>("total"));
 
-        TableColumn<Player, String> playerPercentageColumn = new TableColumn<Player, String>(PLAYER_PERCENTAGE_COLUMN);
-        playerPercentageColumn.setCellValueFactory(new PropertyValueFactory<>("boardPercentage"));
+        TableColumn<Player, String> playerPercentageColumn = new TableColumn<Player, String>(PLAYER_SCORE_COLUMN);
+        playerPercentageColumn.setCellValueFactory(new PropertyValueFactory<>("score"));
 
         playersTable.getColumns().add(playerNameColumn);
-        playersTable.getColumns().add(playerTimeColumn);
         playersTable.getColumns().add(playerPercentageColumn);
+        playersTable.getColumns().add(playerTotalColumn);
 
     }
 
@@ -145,40 +164,77 @@ public class HostLobbyPaneController extends SceneChanger {
 
         JSONObject request = new JSONObject();
         request.put("request", "GET_INFO");
-        System.out.println(request.toString());
-        try {
-            String message = WebSocketConnector.getInstance().dataTransfer(request.toString());
-            System.out.println(message);
+        String response = sendRequest(request.toString());
 
-            JSONObject reply = new JSONObject(message);
-            String data = reply.get("data").toString();
-            JSONObject room_info = new JSONObject(data);
+        JSONObject responseJson = new JSONObject(response);
+        String data = responseJson.get("data").toString();
+        JSONObject room_info = new JSONObject(data);
 
-            JSONArray playersArray = new JSONArray(room_info.get("room_members").toString());
-
-            ArrayList<JSONObject> playersList = new ArrayList<>();
-
-            for (int i = 0; i < playersArray.length(); i++) {
-                playersList.add(playersArray.getJSONObject(i));
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    gameCounterLabel.setText(room_info.get("start_in").toString());
+                } catch (Exception e) {}
             }
+        });
 
-            List<String> playersInTableViewSessionId = new ArrayList<>();
-            for (Player player : items
-            ) {
-                playersInTableViewSessionId.add(player.getSessionId());
-            }
+        if (!gameCounterLabel.getText().equals("999")) {
+            gameCounterLabel.setVisible(true);
+        }
 
-            if (playersInTableViewSessionId.size() != playersList.size()) {
+        JSONArray playersArray = new JSONArray(room_info.get("room_members").toString());
 
-                items.clear();
-                for (JSONObject o : playersList
+        ArrayList<JSONObject> playersList = new ArrayList<>();
+
+        for (int i = 0; i < playersArray.length(); i++) {
+            playersList.add(playersArray.getJSONObject(i));
+        }
+
+        List<String> playersInTableViewSessionId = new ArrayList<>();
+        for (Player player : items
+        ) {
+            playersInTableViewSessionId.add(player.getSessionId());
+        }
+
+        boolean changedScore = false;
+        int i = 0;
+        for (JSONObject o : playersList) {
+            //try catch because server not always send score and total_score
+            try {
+                if (items.get(i).getScore() != Math.round(o.getDouble("score") * 100) ||
+                        items.get(i).getTotal() != Math.round(o.getDouble("total_score") * 100)
                 ) {
-                    items.add(new Player(o.get("username").toString(), o.getString("session_id").toString(), 0, 0));
+                    changedScore = true;
+                }
+                i++;
+            } catch (Exception e) {
+            }
+        }
+
+        if (playersInTableViewSessionId.size() != playersList.size() || changedScore) {
+
+            items.clear();
+            for (JSONObject o : playersList
+            ) {
+                try {
+                    items.add(new Player(o.get("username").toString(), o.get("session_id").toString(), Math.round(o.getDouble("score") * 100), Math.round(o.getDouble("total_score") * 100)));//Double.parseDouble(o.get("score").toString())*100 , Double.parseDouble(o.get("total_score").toString())*100));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    items.add(new Player(o.get("username").toString(), o.get("session_id").toString(), 0, 0));
                 }
             }
-        } catch (Exception e) {
-            System.out.println("brak połaczenia");
-            e.printStackTrace();
+        }
+
+        if (gameCounterLabel.getText().equals("0")) {
+            refreshingTask.cancel();
+
+            Platform.runLater(new Runnable() {
+                @Override
+                public void run() {
+                    changeToMultiPlayerGameScene();
+                }
+            });
         }
     }
 
@@ -194,25 +250,128 @@ public class HostLobbyPaneController extends SceneChanger {
         configureSizeSlider();
         configureBombsSlider();
         configureKickButton();
+        configureStartGameButton();
+    }
+
+    private void configureStartGameButton() {
+        startGameButton.setOnAction(actionEvent -> {
+
+            stopTask();
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                //no need to catch, its only to avoid json crashing(two responses from server can come together)
+            }
+
+            JSONObject request = new JSONObject();
+            request.put("request", "SET_SIZE");
+            request.put("data", Integer.parseInt(sizeValueLabel.getText()));
+
+            sendRequest(request.toString());
+
+            request = new JSONObject();
+            request.put("request", "SET_TIME");
+            request.put("data", Integer.parseInt(timeValueLabel.getText()));
+
+            sendRequest(request.toString());
+
+            Board board = new Board(Integer.parseInt(sizeValueLabel.getText()), Integer.parseInt(bombsCountLabel.getText()));
+            Integer[][] tableInt = board.getBoardInteger();
+
+            request = new JSONObject();
+            request.put("request", "START_GAME");
+
+            JSONArray boardArray = new JSONArray();
+            JSONArray row = new JSONArray();
+
+            //getting start point and generating map
+            //searching empty fields, emptySquareCounter helps to not get first empty field
+
+            int startX = 0;
+            int startY = 0;
+            int emptySquareCounter = 0;
+            int allEmptySquareCounter = 0;
+
+            for (int i = 0; i < tableInt[0].length; i++) {
+                for (int j = 0; j < tableInt[0].length; j++) {
+
+
+                    if (tableInt[i][j]==0) {
+                        allEmptySquareCounter++;
+                    }
+                }
+            }
+
+
+            for (int i = 0; i < tableInt[0].length; i++) {
+                for (int j = 0; j < tableInt[0].length; j++) {
+
+                    row.put(tableInt[i][j]);
+
+                    if (tableInt[i][j]==0) {
+                        emptySquareCounter++;
+                        if (emptySquareCounter > allEmptySquareCounter / 3 && startX == 0 && startY == 0) {
+                            startX = i;
+                            startY = j;
+                        }
+                    }
+                }
+                boardArray.put(row);
+                row = new JSONArray();
+            }
+
+            JSONObject data = new JSONObject();
+            data.put("map", boardArray);
+
+            data.put("start_point", "[" + startX + "," + startY + "]");
+            request.put("data", data);
+
+            String response = sendRequest(request.toString());
+            JSONObject responseJson = new JSONObject(response);
+            if (!responseJson.getString("message").equals("INCORRECT DATA FORMAT")) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                startGameButton.setDisable(true);
+            }
+
+            startTask();
+
+        });
     }
 
     private void configureKickButton() {
         kickPlayerButton.setOnAction(actionEvent -> {
-            try {
+            if (playersTable.getSelectionModel().getSelectedItem() != null) {
 
-                if (playersTable.getSelectionModel().getSelectedItem() != null) {
-                    JSONObject request = new JSONObject();
-                    request.put("request", "KICK_PLAYER");
-                    request.put("data", playersTable.getSelectionModel().getSelectedItem().getSessionId());
-
-                    System.out.println(request.toString());
-                    String response = WebSocketConnector.getInstance().dataTransfer(request.toString());
-                    System.out.println(response);
+                stopTask();
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                    //no need to catch, its only to avoid json crashing(two responses from server can come together)
                 }
 
+                JSONObject request = new JSONObject();
+                request.put("request", "KICK_PLAYER");
 
-            } catch (IOException e) {
-                e.printStackTrace();
+
+                request.put("data", playersTable.getSelectionModel().getSelectedItem().getSessionId());
+                //String response =
+                String response = sendRequest(request.toString());
+                JSONObject responseJson = new JSONObject(response);
+                if (!responseJson.getString("message").equals("INCORRECT DATA FORMAT")) {
+                    startGameButton.setDisable(true);
+                }
+                startTask();
+
             }
         });
     }
@@ -240,7 +399,6 @@ public class HostLobbyPaneController extends SceneChanger {
             updateSize();
             updateMaxBombs();
             bombsSlider.setMax(maxBombsCount);
-
         });
     }
 
@@ -253,7 +411,6 @@ public class HostLobbyPaneController extends SceneChanger {
         timeSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
             timeValueLabel.setText(String.valueOf(newValue.intValue()));
         });
-        ;
     }
 
     private void updateBombs() {
@@ -271,7 +428,7 @@ public class HostLobbyPaneController extends SceneChanger {
 
     private void updateMaxBombs() {
         updateBombs();
-        maxBombsCount = (int) Math.pow(Double.parseDouble(sizeValueLabel.getText()), 2) / 4;
+        maxBombsCount = (int) Math.pow(Double.parseDouble(sizeValueLabel.getText()), 2) / 6;
         if (bombsCount > maxBombsCount) {
             bombsCount = maxBombsCount;
             bombsCountLabel.setText(String.valueOf(bombsCount));
@@ -309,7 +466,6 @@ public class HostLobbyPaneController extends SceneChanger {
                 bombsCountLabel.setText(String.valueOf(Integer.parseInt(bombsCountLabel.getText()) + 1));
                 updateBombs();
                 bombsSlider.setValue(bombsCount);
-
             }
         });
     }
@@ -330,8 +486,6 @@ public class HostLobbyPaneController extends SceneChanger {
                 timeValueLabel.setText(String.valueOf(Integer.parseInt(timeValueLabel.getText()) + 1));
                 updateTime();
                 timeSlider.setValue(time);
-
-
             }
         });
     }
@@ -349,19 +503,38 @@ public class HostLobbyPaneController extends SceneChanger {
 
     private void configureLeaveRoomButton() {
         leaveRoomButton.setOnAction(actionEvent -> {
-            try {
-                refreshingTask.cancel();
-                JSONObject request = new JSONObject();
-                request.put("request", "LEAVE_ROOM");
-                System.out.println(request);
-                String message = WebSocketConnector.getInstance().dataTransfer(request.toString());
-                System.out.println(message);
 
-                changeToChooseOptionScene(leaveRoomButton);
+            refreshingTask.cancel();
+            JSONObject request = new JSONObject();
+            request.put("request", "LEAVE_ROOM");
+            sendRequest(request.toString());
+            changeScene(Scenes.MULTI_CHOOSE_OPTION_SCENE, leaveRoomButton);
 
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         });
+    }
+
+    private void changeToMultiPlayerGameScene() {
+        try {
+            FXMLLoader loader = new FXMLLoader();
+            loader.setLocation(getClass().getResource(Scenes.MULTI_GAME_SCENE.getFxmlPath()));
+
+            Parent multiPlayerGameParent = loader.load();
+            Scene multiPlayerGameScene = new Scene(multiPlayerGameParent);
+
+            //access the method initData to put board size and bombs count
+            MultiPlayerGamePaneController multiPlayerGamePaneController = loader.getController();
+            multiPlayerGamePaneController.initData(true);
+
+            Stage window = (Stage) (startGameButton.getScene().getWindow());
+            window.setScene(multiPlayerGameScene);
+            window.show();
+            window.centerOnScreen();
+        } catch (IOException e) {
+            System.out.println();
+            System.err.println("Error while changing scene to Game Scene. Probably fxml loading fail");
+            e.printStackTrace();
+            System.out.println();
+            startGameButton.fire();
+        }
     }
 }

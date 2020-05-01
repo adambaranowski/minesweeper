@@ -3,41 +3,29 @@ package pl.adambaranowski.minesweeper.utils;
 public class Player {
     private String name;
     private String sessionId;
-    private int time;
-    private int boardPercentage;
+    private double score;
+    private double total;
 
-    public Player(String name, String sessionId, int time, int boardPercentage) {
+    public Player(String name, String sessionId, double score, double total) {
         this.name = name;
         this.sessionId = sessionId;
-        this.time = time;
-        this.boardPercentage = boardPercentage;
+        this.score = score;
+        this.total = total;
     }
 
     public String getSessionId() {
         return sessionId;
     }
 
+    public double getScore() {
+        return score;
+    }
+
+    public double getTotal() {
+        return total;
+    }
+
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public int getTime() {
-        return time;
-    }
-
-    public void setTime(int time) {
-        this.time = time;
-    }
-
-    public int getBoardPercentage() {
-        return boardPercentage;
-    }
-
-    public void setBoardPercentage(int boardPercentage) {
-        this.boardPercentage = boardPercentage;
     }
 }

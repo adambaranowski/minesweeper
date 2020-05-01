@@ -14,7 +14,7 @@ public class StringValidator {
     }
 
 
-    public boolean checkTextCorrect(String text) {
+    public boolean checkTextCorrectness(String text) {
         if (text.contains("~") || text.length() < 3) {
             return false;
         }

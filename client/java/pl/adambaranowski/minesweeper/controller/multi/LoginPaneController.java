@@ -4,14 +4,11 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import org.json.JSONObject;
-import pl.adambaranowski.minesweeper.functions.SceneChanger;
-import pl.adambaranowski.minesweeper.functions.StringValidator;
-import pl.adambaranowski.minesweeper.functions.WebSocketConnector;
+import pl.adambaranowski.minesweeper.functions.*;
 
-import java.io.IOException;
 import java.util.Random;
 
-public class LoginPaneController extends SceneChanger {
+public class LoginPaneController implements ScenesChanger, RequestSender {
 
     @FXML
     private TextField nickTextField;
@@ -39,8 +36,8 @@ public class LoginPaneController extends SceneChanger {
     private void configureLogInButton() {
         logInButton.setOnAction(actionEvent -> {
 
-            if (StringValidator.getInstance().checkTextCorrect(nickTextField.getText()) &&
-                    StringValidator.getInstance().checkTextCorrect(serverTextField.getText())) {
+            if (StringValidator.getInstance().checkTextCorrectness(nickTextField.getText()) &&
+                    StringValidator.getInstance().checkTextCorrectness(serverTextField.getText())) {
 
                 JSONObject user = new JSONObject();
                 user.put("username", nickTextField.getText());
@@ -48,15 +45,15 @@ public class LoginPaneController extends SceneChanger {
 
                 serverAddress = serverTextField.getText();
                 try {
+                    //creating instance of WebSocketConector for future use in RequestSender
                     String message = WebSocketConnector.createInstance(serverAddress, 1337).dataTransfer(user.toString());
                     System.out.println(message);
-                    changeToChooseOptionScene(logInButton);
+                    changeScene(Scenes.MULTI_CHOOSE_OPTION_SCENE, logInButton);
 
                 } catch (Exception e) {
                     System.out.println("brak połączenia");
                     e.printStackTrace();
                 }
-
             }
 
         });
@@ -64,11 +61,7 @@ public class LoginPaneController extends SceneChanger {
 
     private void configureToMenuButton() {
         toMenuButton.setOnAction(actionEvent -> {
-            try {
-                changeToMenuScene(toMenuButton);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            changeScene(Scenes.MENU_SCENE, toMenuButton);
         });
     }
 
@@ -76,5 +69,4 @@ public class LoginPaneController extends SceneChanger {
         Random random = new Random();
         nickTextField.setText("Puciak" + random.nextInt(10_000));
     }
-
 }

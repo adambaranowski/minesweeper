@@ -1,6 +1,7 @@
 package pl.adambaranowski.minesweeper.board;
 
 import javafx.scene.control.ToggleButton;
+
 import java.util.*;
 
 public class Board {
@@ -10,44 +11,111 @@ public class Board {
     private int size;
     private HashMap<String, ToggleButton> buttons;
 
-
     private int squaresToUnhideNumber;
     private int unhiddenSquaresNumber;
     public double unhideBoardPercentage;
 
 
-
+    //For singleplayer game
     public Board(int size, int bombsCount, HashMap<String, ToggleButton> buttons) {
 
-        if (size > 7 ) {
-            this.size = size;
-            board = new Square[size][size];
-        } else {
-            this.size = 7;
-            board = new Square[7][7];
+        this.bombsCount = bombsCount;
+        this.buttons = buttons;
+        this.size = size;
+
+        board = new Square[size][size];
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board[0].length; j++) {
+                board[i][j] = new Square();
+            }
         }
+
+        unhiddenSquaresNumber = 0;
+        squaresToUnhideNumber = (int) Math.pow(size, 2) - bombsCount;
+        unhideBoardPercentage = 0.0;
+
+        setBombs();
+        setNumbers();
+    }
+
+    //For multiplayer game
+    public Board(int size, HashMap<String, ToggleButton> buttons, Integer[][] boardArray) {
+
+        this.size = size;
+        board = new Square[size][size];
+
 
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board[0].length; j++) {
                 board[i][j] = new Square();
             }
-
         }
 
-        if (bombsCount < board.length * board[0].length - 1 && bombsCount > 0) {
-            this.bombsCount = bombsCount;
-        } else {
-            this.bombsCount = board.length * board[0].length - 1;
+        int bombsInArray = 0;
+        for (int i = 0; i < boardArray.length; i++) {
+            for (int j = 0; j < boardArray.length; j++) {
+                if (boardArray[i][j] == 8) {
+                    bombsInArray++;
+                }
+            }
         }
 
         unhiddenSquaresNumber = 0;
-        squaresToUnhideNumber = (int)Math.pow(size,2) - bombsCount;
+        squaresToUnhideNumber = (int) Math.pow(size, 2) - bombsInArray;
         unhideBoardPercentage = 0.0;
 
         this.buttons = buttons;
 
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                if (boardArray[i][j] == 0) {
+                    board[i][j].setStatus(" ");
+                } else if (boardArray[i][j] == 8) {
+                    board[i][j].setStatus("o");
+                } else {
+                    board[i][j].setStatus(String.valueOf(boardArray[i][j]));
+                }
+            }
+        }
+    }
+
+    //For host lobby to generate map
+    public Board(int size, int bombsCount) {
+        this.size = size;
+        this.bombsCount = bombsCount;
+        board = new Square[size][size];
+
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board[0].length; j++) {
+                board[i][j] = new Square();
+            }
+        }
+
+        unhiddenSquaresNumber = 0;
+        squaresToUnhideNumber = (int) Math.pow(size, 2) - bombsCount;
+        unhideBoardPercentage = 0.0;
         setBombs();
         setNumbers();
+    }
+
+
+    public Integer[][] getBoardInteger() {
+        Integer[][] s = new Integer[size][size];
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+
+                if (board[i][j].getStatus().equals(" ")) {
+                    s[i][j] = 0;
+                } else if (board[i][j].getStatus().equals("o")) {
+                    s[i][j] = 8;
+                } else {
+
+                    s[i][j] = Integer.parseInt(board[i][j].getStatus());
+                }
+            }
+        }
+        return s;
     }
 
     private void setBombs() {
@@ -62,11 +130,8 @@ public class Board {
             if (!bombsPositions.contains(bomb)) {
                 bombsPositions.add(bomb);
             }
-
         }
-
         Collections.sort(bombsPositions);
-
         int x = 0;
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board[0].length; j++) {
@@ -76,13 +141,12 @@ public class Board {
                 x++;
             }
         }
-
     }
+
 
     public void setNumbers() {
 
         int bombsNumber;
-
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board[0].length; j++) {
                 bombsNumber = 0;
@@ -207,23 +271,20 @@ public class Board {
 
     public void printBoard() {
 
+        System.out.println("#########BOARD#######");
+
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board[0].length; j++) {
-                System.out.print(board[i][j].getStatus() + "  ");
-            }
-            System.out.print("             ");
-
-            for (int j = 0; j < board[0].length; j++) {
                 if (board[i][j].isHide()) {
-                    System.out.print("H  ");
+                    System.out.print("[" + board[i][j].getStatus() + "]" + " ");
                 } else {
-                    System.out.print(board[i][j].getStatus() + "  ");
+                    System.out.print(" " + board[i][j].getStatus() + " " + " ");
                 }
-
             }
 
             System.out.println();
         }
+        System.out.println("######################");
     }
 
     //unhide fields in the model of board
@@ -233,8 +294,8 @@ public class Board {
             int r = row;
             int p = position;
 
-            if (!board[row][position].getStatus().equals(" ")|| !board[row][position].isHide()) {
-                can= false;
+            if (!board[row][position].getStatus().equals(" ") || !board[row][position].isHide()) {
+                can = false;
             }
 
             if (!board[row][position].getStatus().equals("o")) { //&& board[row][position].isHide()) {
@@ -320,59 +381,50 @@ public class Board {
     }
 
     //Unhide buttons while game is on
-    private void unhideButtons(){
+    private void unhideButtons() {
         String buttonId;
-        unhiddenSquaresNumber=0;
+        unhiddenSquaresNumber = 0;
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board[0].length; j++) {
 
-                if(!board[i][j].isHide()){
-                    buttonId=String.valueOf(i)+ " " +String.valueOf(j);
+                if (!board[i][j].isHide()) {
+                    buttonId = String.valueOf(i) + " " + String.valueOf(j);
 
                     buttons.get(buttonId).setText(board[i][j].getStatus());
                     buttons.get(buttonId).setSelected(true);
                     buttons.get(buttonId).setDisable(true);
                     unhiddenSquaresNumber++;
 
-
-
                 }
-
             }
         }
-        unhideBoardPercentage = (double)unhiddenSquaresNumber/squaresToUnhideNumber;
-
+        unhideBoardPercentage = (double) unhiddenSquaresNumber / squaresToUnhideNumber;
     }
 
     //Unhide all the board when player lost game
-    public void unhideButtonsWhenLose(){
+    public void unhideButtonsWhenLose() {
         String buttonId;
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board[0].length; j++) {
-
-                buttonId=String.valueOf(i)+ " " + String.valueOf(j);
+                buttonId = String.valueOf(i) + " " + String.valueOf(j);
                 buttons.get(buttonId).setText(board[i][j].getStatus());
                 buttons.get(buttonId).setDisable(true);
-
             }
         }
     }
 
     //Add flag "P" to rest of buttons when player won
-    public void unhideButtonsWhenWin(){
+    public void unhideButtonsWhenWin() {
         String buttonId;
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board[0].length; j++) {
 
-
-                buttonId=String.valueOf(i)+ " " + String.valueOf(j);
+                buttonId = String.valueOf(i) + " " + String.valueOf(j);
                 buttons.get(buttonId).setText(board[i][j].getStatus());
-                //System.out.println(buttonId);
-                //System.out.println("i= "+ i + " j= "+j+" button id= "+buttonId);
 
                 //100% of board is uncovered so buttons that are not selected are bombs
                 //put "P" flag on them
-                if(!buttons.get(buttonId).isSelected()){
+                if (!buttons.get(buttonId).isSelected()) {
                     buttons.get(buttonId).setText("P");
                 }
             }
@@ -382,5 +434,4 @@ public class Board {
     public Square[][] getBoard() {
         return board;
     }
-
 }

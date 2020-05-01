@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.Cursor?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.effect.InnerShadow?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="700.0" styleClass="anchorPane" stylesheets="@../../css/style.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pl.adambaranowski.minesweeper.controller.multi.MultiPlayerGamePaneController">
+    <children>
+        <BorderPane fx:id="borderPane" layoutX="100.0" layoutY="200.0" minHeight="700.0" minWidth="550.0" styleClass="borderPane" stylesheets="@../../css/style.css" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <cursor>
+                <Cursor fx:constant="S_RESIZE" />
+            </cursor>
+            <bottom>
+                <HBox alignment="CENTER_LEFT" minHeight="-Infinity" prefHeight="50.0" spacing="10.0" BorderPane.alignment="CENTER_LEFT">
+                    <children>
+                        <ProgressBar fx:id="progressBar" prefWidth="200.0" progress="0.0">
+                            <cursor>
+                                <Cursor fx:constant="DEFAULT" />
+                            </cursor>
+                        </ProgressBar>
+                        <Label fx:id="progressNumber" styleClass="minorMinorLabel">
+                            <cursor>
+                                <Cursor fx:constant="DEFAULT" />
+                            </cursor>
+                        </Label>
+                        <Button fx:id="toMenuButton" disable="true" mnemonicParsing="false" text="To Menu" visible="false" />
+                    </children>
+                    <BorderPane.margin>
+                        <Insets left="10.0" />
+                    </BorderPane.margin>
+                    <padding>
+                        <Insets left="105.0" />
+                    </padding>
+                </HBox>
+            </bottom>
+            <top>
+                <VBox alignment="CENTER" prefHeight="100.0" prefWidth="100.0" BorderPane.alignment="CENTER">
+                    <children>
+                        <Label fx:id="mainLabel" contentDisplay="CENTER" styleClass="bigLabel" text="Minesweeper" />
+                        <Label fx:id="timerLabel" styleClass="minorLabel" text="999" visible="false" />
+                    </children>
+                </VBox>
+            </top>
+         <right>
+            <VBox fx:id="playersStats" minWidth="-Infinity" prefHeight="200.0" prefWidth="160.0" spacing="10.0" BorderPane.alignment="CENTER">
+               <padding>
+                  <Insets left="5.0" right="5.0" top="30.0" />
+               </padding></VBox>
+         </right>
+        </BorderPane>
+    </children>
+    <effect>
+        <InnerShadow />
+    </effect>
+    <cursor>
+        <Cursor fx:constant="DEFAULT" />
+    </cursor>
+</AnchorPane>

@@ -5,13 +5,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import org.json.JSONObject;
-import pl.adambaranowski.minesweeper.functions.SceneChanger;
-import pl.adambaranowski.minesweeper.functions.StringValidator;
-import pl.adambaranowski.minesweeper.functions.WebSocketConnector;
+import pl.adambaranowski.minesweeper.functions.*;
 
-import java.io.IOException;
-
-public class CreateRoomPaneController extends SceneChanger {
+public class CreateRoomPaneController implements ScenesChanger, RequestSender {
 
     @FXML
     private TextField roomNameTextField;
@@ -40,7 +36,6 @@ public class CreateRoomPaneController extends SceneChanger {
         configurePlayersLimitIncButton();
         configureCreateButton();
         updatePlayersLimit();
-
     }
 
     private void configurePlayersLimitIncButton() {
@@ -58,62 +53,37 @@ public class CreateRoomPaneController extends SceneChanger {
             if (Integer.parseInt(playersLimitLabel.getText()) > 2) {
                 playersLimitLabel.setText(String.valueOf(Integer.parseInt(playersLimitLabel.getText()) - 1));
                 updatePlayersLimit();
-
             }
         });
     }
 
     private void configureCreateButton() {
         createRoomButton.setOnAction(actionEvent -> {
-            if (roomNameValidation()) {
-                try {
+            if (StringValidator.getInstance().checkTextCorrectness(roomNameTextField.getText())) {
+                JSONObject request = new JSONObject();
+                JSONObject roomParametres = new JSONObject();
 
-                    if (StringValidator.getInstance().checkTextCorrect(roomNameTextField.getText())) {
+                roomParametres.put("name", roomNameTextField.getText());
+                roomParametres.put("size", playersLimit);
 
-                        JSONObject room = new JSONObject();
-                        JSONObject roomParameteres = new JSONObject();
+                request.put("request", "CREATE_ROOM");
+                request.put("data", roomParametres);
 
-                        roomParameteres.put("name", roomNameTextField.getText());
-                        roomParameteres.put("size", playersLimit);
+                sendRequest(request.toString());
 
-                        room.put("request", "CREATE_ROOM");
-                        room.put("data", roomParameteres);
+                changeScene(Scenes.MULTI_HOST_LOBBY_SCENE, createRoomButton);
 
-                        System.out.println(room.toString());
-                        String message = WebSocketConnector.getInstance().dataTransfer(room.toString());
-                        System.out.println(message);
-                        changeToHostLobbyScene(createRoomButton);
-
-                    }
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
             }
         });
     }
 
     private void configureBackButton() {
         backButton.setOnAction(actionEvent -> {
-            try {
-                changeToChooseOptionScene(backButton);
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            changeScene(Scenes.MULTI_CHOOSE_OPTION_SCENE, backButton);
         });
     }
 
     private void updatePlayersLimit() {
         playersLimit = Integer.parseInt(playersLimitLabel.getText());
-    }
-
-    private boolean roomNameValidation() {
-        if (!roomNameTextField.getText().equals("")) {
-            return true;
-        } else {
-            return false;
-        }
-
     }
 }

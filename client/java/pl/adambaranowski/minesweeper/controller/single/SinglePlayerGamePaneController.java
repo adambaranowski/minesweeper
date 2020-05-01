@@ -10,16 +10,17 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
+import org.json.JSONArray;
 import pl.adambaranowski.minesweeper.board.Board;
 
-import java.io.IOException;
 import java.util.HashMap;
 
-import pl.adambaranowski.minesweeper.functions.SceneChanger;
+import pl.adambaranowski.minesweeper.functions.Scenes;
+import pl.adambaranowski.minesweeper.functions.ScenesChanger;
 import pl.adambaranowski.minesweeper.functions.TimerSetter;
 
 
-public class SinglePlayerGamePaneController extends SceneChanger {
+public class SinglePlayerGamePaneController implements ScenesChanger {
 
     @FXML
     private ProgressBar progressBar;
@@ -41,15 +42,14 @@ public class SinglePlayerGamePaneController extends SceneChanger {
 
     private HashMap<String, ToggleButton> buttons;
 
-
     private int size;
-    private int bombsCount;
     private final static int SQUARE_SIZE = 25;
     private TimerSetter timerSetter;
-
     private Board board;
 
     public void initialize() {
+
+
         configureToMenuButton();
     }
 
@@ -58,9 +58,8 @@ public class SinglePlayerGamePaneController extends SceneChanger {
     }
 
     public void initData(int size, int bombsCount) {
-        this.size = size;
-        //this.bombsCount = bombsCount;
 
+        this.size = size;
         addButtons();
 
         /*
@@ -68,10 +67,39 @@ public class SinglePlayerGamePaneController extends SceneChanger {
         */
         this.board = new Board(size, bombsCount, buttons);
 
-        timerSetter = new TimerSetter(timerLabel);
+        timerSetter = new TimerSetter(timerLabel, false, 0);
         timerSetter.setTimer();
 
 
+
+
+        Integer[][] tableInt = board.getBoardInteger();
+
+        int startX = 0;
+        int startY = 0;
+        int emptySquareCounter = 0;
+        int allEmptySquareCounter = 0;
+
+        for (int i = 0; i < tableInt[0].length; i++) {
+            for (int j = 0; j < tableInt[0].length; j++) {
+                if (tableInt[i][j]==0) {
+                    allEmptySquareCounter++;
+                }
+            }
+        }
+
+        for (int i = 0; i < tableInt[0].length; i++) {
+            for (int j = 0; j < tableInt[0].length; j++) {
+                if (tableInt[i][j]==0) {
+                    emptySquareCounter++;
+                    if (emptySquareCounter > allEmptySquareCounter / 3 && startX == 0 && startY == 0) {
+                        startX = i;
+                        startY = j;
+                    }
+                }
+            }
+        }
+        buttons.get(startX + " " + startY).setStyle("-fx-background-color: lightgreen");
     }
 
     private void addButtons() {
@@ -86,7 +114,7 @@ public class SinglePlayerGamePaneController extends SceneChanger {
             for (int j = 0; j < size; j++) {
                 ToggleButton toggleButton = new ToggleButton();
                 //i=row, j=position in row
-                buttonId = String.valueOf(i) + " " + String.valueOf(j);
+                buttonId = i + " " + j;
                 toggleButton.setId(buttonId);
                 toggleButton.setMinSize(SQUARE_SIZE, SQUARE_SIZE);
                 toggleButton.setMaxSize(SQUARE_SIZE, SQUARE_SIZE);
@@ -109,7 +137,7 @@ public class SinglePlayerGamePaneController extends SceneChanger {
                         } else {
                             board.click(finalI, finalJ);
                             toggleButton.setDisable(true);
-                            progressNumber.setText(String.valueOf(Math.round(board.unhideBoardPercentage * 100) + "%"));
+                            progressNumber.setText(String.valueOf(Math.round(board.unhideBoardPercentage * 10000) / 100 + "%"));
                             progressBar.setProgress(board.unhideBoardPercentage);
 
                         }
@@ -128,25 +156,16 @@ public class SinglePlayerGamePaneController extends SceneChanger {
                 //inverted because in gridPane: j=column  i=row
                 gridPane.add(toggleButton, j, i);
                 buttons.put(buttonId, toggleButton);
-
             }
-
         }
-
         gridPane.setCursor(Cursor.DEFAULT);
         borderPane.setCursor(Cursor.DEFAULT);
-
         borderPane.setCenter(gridPane);
-
     }
 
     private void configureToMenuButton() {
         toMenuButton.setOnAction(actionEvent -> {
-            try {
-                changeToMenuScene(toMenuButton);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            changeScene(Scenes.MENU_SCENE, toMenuButton);
         });
     }
 
@@ -154,7 +173,6 @@ public class SinglePlayerGamePaneController extends SceneChanger {
         mainLabel.setText("Game Over!");
         toMenuButton.setDisable(false);
         timerSetter.stopTimer();
-
     }
 
     private void win() {
@@ -162,7 +180,5 @@ public class SinglePlayerGamePaneController extends SceneChanger {
         toMenuButton.setDisable(false);
         board.unhideButtonsWhenWin();
         timerSetter.stopTimer();
-
     }
-
 }

@@ -1,6 +1,5 @@
 package pl.adambaranowski.minesweeper.controller.single;
 
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -9,12 +8,12 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
-import pl.adambaranowski.minesweeper.functions.SceneChanger;
+import pl.adambaranowski.minesweeper.functions.Scenes;
+import pl.adambaranowski.minesweeper.functions.ScenesChanger;
 
 import java.io.IOException;
 
-public class SinglePlayerStartPaneController extends SceneChanger {
+public class SinglePlayerStartPaneController implements ScenesChanger {
 
     @FXML
     private Label bombsCountLabel;
@@ -135,7 +134,6 @@ public class SinglePlayerStartPaneController extends SceneChanger {
 
     private void configureSizeDcrButton() {
         sizeDcrButton.setOnAction(actionEvent -> {
-
             if (Integer.parseInt(sizeValueLabel.getText()) > MIN_SIZE) {
                 sizeValueLabel.setText(String.valueOf(Integer.parseInt(sizeValueLabel.getText()) - 1));
                 updateSize();
@@ -170,49 +168,43 @@ public class SinglePlayerStartPaneController extends SceneChanger {
 
     private void configureToMenuButton() {
         toMenuButton.setOnAction(actionEvent -> {
-            try {
-                changeToMenuScene(toMenuButton);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        changeScene(Scenes.MENU_SCENE, toMenuButton);
         });
     }
 
     private void configurePlayButton() {
         playButton.setOnAction(actionEvent -> {
-            try {
                 changeToSinglePlayerGameScene();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         });
     }
 
 
-    private void changeToSinglePlayerGameScene() throws IOException {
+    private void changeToSinglePlayerGameScene() {
 
         FXMLLoader loader = new FXMLLoader();
-        loader.setLocation(getClass().getResource("/fxml/single/singlePlayerGamePane.fxml"));
+        loader.setLocation(getClass().getResource(Scenes.SINGLE_GAME_SCENE.getFxmlPath()));
 
-        Parent singlePlayerGameParent = loader.load();
-        Scene singlePlayerGameScene = new Scene(singlePlayerGameParent);
+        try {
+            Parent singlePlayerGameParent = loader.load();
+            Scene singlePlayerGameScene = new Scene(singlePlayerGameParent);
 
-        //access the method initData to put board size and bombs count
-        SinglePlayerGamePaneController singlePlayerGamePaneController = loader.getController();
-        singlePlayerGamePaneController.initData(size, bombsCount);
+            //access the method initData to put board size and bombs count
+            SinglePlayerGamePaneController singlePlayerGamePaneController = loader.getController();
+            singlePlayerGamePaneController.initData(size, bombsCount);
 
-        Stage window = (Stage) (playButton.getScene().getWindow());
-        window.setScene(singlePlayerGameScene);
-        window.show();
+            Stage window = (Stage) (playButton.getScene().getWindow());
+            window.setScene(singlePlayerGameScene);
+            window.show();
+            window.centerOnScreen();
 
-        //stop timer when closing window
-        window.setOnCloseRequest(new EventHandler<WindowEvent>() {
-            @Override
-            public void handle(WindowEvent windowEvent) {
-                singlePlayerGamePaneController.getTimerSetter().stopTimer();
-            }
-        });
+            //stop timer when closing window
+            window.setOnCloseRequest(windowEvent -> singlePlayerGamePaneController.getTimerSetter().stopTimer());
 
+        }catch (IOException e){
+            System.out.println();
+            System.err.println("Error while changing scene to Game Scene. Probably fxml loading fail");
+            e.printStackTrace();
+            System.out.println();
+        }
     }
-
 }

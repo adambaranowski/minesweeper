@@ -2,11 +2,11 @@ package pl.adambaranowski.minesweeper.controller.menu;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
-import pl.adambaranowski.minesweeper.functions.SceneChanger;
+import pl.adambaranowski.minesweeper.functions.Scenes;
+import pl.adambaranowski.minesweeper.functions.ScenesChanger;
 
-import java.io.IOException;
 
-public class StartPaneController extends SceneChanger {
+public class StartPaneController implements ScenesChanger {
 
     @FXML
     private Button singlePlayerButton;
@@ -29,31 +29,19 @@ public class StartPaneController extends SceneChanger {
 
     private void configureSinglePlayerButton() {
         singlePlayerButton.setOnAction(actionEvent -> {
-            try {
-                changeToSinglePlayerScene(singlePlayerButton);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            changeScene(Scenes.SINGLE_START_SCENE, singlePlayerButton);
         });
     }
 
     private void configureMultiPlayerButton() {
         multiPlayerButton.setOnAction(actionEvent -> {
-            try {
-                changeToMultiPlayerLoginScene(multiPlayerButton);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            changeScene(Scenes.MULTI_LOGIN_SCENE, multiPlayerButton);
         });
     }
 
     private void configureAboutButton() {
         aboutButton.setOnAction(actionEvent -> {
-            try {
-                changeToAboutScene(aboutButton);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            changeScene(Scenes.ABOUT_SCENE, aboutButton);
         });
 
     }

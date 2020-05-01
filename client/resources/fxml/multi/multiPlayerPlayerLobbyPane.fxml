@@ -39,7 +39,7 @@
                      </columnResizePolicy></TableView>
                         <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
                             <children>
-                                <Label fx:id="gameCounterLabel" styleClass="minorMinorLabel" stylesheets="@../../css/style.css" text="5" textAlignment="CENTER" />
+                                <Label fx:id="gameCounterLabel" styleClass="minorMinorLabel" stylesheets="@../../css/style.css" text="999" textAlignment="CENTER" visible="false" />
                             </children>
                         </HBox>
                         <Button fx:id="leaveRoomButton" mnemonicParsing="false" text="Leave Room" />
@@ -47,7 +47,7 @@
                 </VBox>
             </bottom>
          <center>
-                  <Label fx:id="roomNameLabel" styleClass="minorLabel" text="roomName" BorderPane.alignment="CENTER" />
+                  <Label fx:id="roomNameLabel" styleClass="minorLabel" text="roomName" visible="false" BorderPane.alignment="CENTER" />
          </center>
         </BorderPane>
     </children>

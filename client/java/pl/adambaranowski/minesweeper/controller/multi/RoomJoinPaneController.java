@@ -2,8 +2,6 @@ package pl.adambaranowski.minesweeper.controller.multi;
 
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
@@ -11,16 +9,16 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import pl.adambaranowski.minesweeper.functions.SceneChanger;
-import pl.adambaranowski.minesweeper.functions.WebSocketConnector;
-import pl.adambaranowski.minesweeper.utils.Player;
+import pl.adambaranowski.minesweeper.functions.RequestSender;
+import pl.adambaranowski.minesweeper.functions.Scenes;
+import pl.adambaranowski.minesweeper.functions.ScenesChanger;
 import pl.adambaranowski.minesweeper.utils.Room;
 
-import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class RoomJoinPaneController extends SceneChanger {
+public class RoomJoinPaneController implements ScenesChanger, RequestSender {
     @FXML
     private Button joinRoomButton;
 
@@ -30,39 +28,48 @@ public class RoomJoinPaneController extends SceneChanger {
     @FXML
     private TableView<Room> roomsTable;
 
+    Task refreshingTask;
+
     private final String ROOM_NAME_COLUMN = "Room";
     private final String PLAYERS_COLUMN = "Players";
     private Integer roomId = 7959;
+
+    private Thread refresh;
 
     public void initialize() {
         configureTableColumns();
         configureBackButton();
         configureJoinButton();
         updateTable();
+        startTask();
+    }
 
-        Thread refresh = new Thread(refreshingTask);
+    private void startTask() {
+        newTask();
+        refresh = new Thread(refreshingTask);
         refresh.setDaemon(true);
         refresh.start();
     }
 
-    Task refreshingTask = new Task() {
-        @Override
-        protected Object call() throws Exception {
-            while (true) {
-                if (isCancelled()) {
-                    break;
+    private void newTask() {
+        refreshingTask = new Task() {
+            @Override
+            protected Object call() throws Exception {
+                while (true) {
+                    if (isCancelled()) {
+                        break;
+                    }
+                    updateTable();
+                    try {
+                        Thread.sleep(200);
+                    } catch (InterruptedException e) {
+                    }
                 }
-                updateTable();
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                return null;
             }
-            return null;
-        }
+        };
+    }
 
-    };
 
     private void configureTableColumns() {
 
@@ -72,7 +79,6 @@ public class RoomJoinPaneController extends SceneChanger {
         roomPlayersColumn.setCellValueFactory(new PropertyValueFactory<>("playersString"));
         roomsTable.getColumns().add(roomNameColumn);
         roomsTable.getColumns().add(roomPlayersColumn);
-
     }
 
 
@@ -80,75 +86,64 @@ public class RoomJoinPaneController extends SceneChanger {
         ObservableList<Room> items = roomsTable.getItems();
         JSONObject request = new JSONObject();
         request.put("request", "ALL_ROOMS");
-        System.out.println(request.toString());
-        try {
 
-            String message = WebSocketConnector.getInstance().dataTransfer(request.toString());
-            System.out.println(message);
-            JSONObject allRooms = new JSONObject(message);
-            JSONArray roomsArray = new JSONArray(allRooms.get("data").toString());
-            ArrayList<JSONObject> roomsList = new ArrayList<>();
+        String response = sendRequest(request.toString());
+        JSONObject allRooms = new JSONObject(response);
+        JSONArray roomsArray = new JSONArray(allRooms.get("data").toString());
+        ArrayList<JSONObject> roomsList = new ArrayList<>();
 
-            for (int i = 0; i < roomsArray.length(); i++) {
-                roomsList.add(roomsArray.getJSONObject(i));
-            }
+        for (int i = 0; i < roomsArray.length(); i++) {
+            roomsList.add(roomsArray.getJSONObject(i));
+        }
 
-            List<Integer> roomsInTableViewId = new ArrayList<>();
+        List<Integer> roomsInTableViewId = new ArrayList<>();
 
-            for (Room room : items
+        for (Room room : items
+        ) {
+            roomsInTableViewId.add(room.getRoomId());
+        }
+
+        if (roomsInTableViewId.size() != roomsList.size()) {
+            items.clear();
+            for (JSONObject o : roomsList
             ) {
-                roomsInTableViewId.add(room.getRoomId());
+                items.add(new Room(Integer.parseInt(o.get("room_id").toString()), o.get("room_name").toString(), Integer.parseInt(o.get("max_players").toString()), Integer.parseInt(o.get("players").toString())));
             }
-
-            if (roomsInTableViewId.size() != roomsList.size()) {
-                items.clear();
-                for (JSONObject o : roomsList
-                ) {
-                    items.add(new Room(Integer.parseInt(o.get("room_id").toString()), o.get("room_name").toString(), Integer.parseInt(o.get("max_players").toString()), Integer.parseInt(o.get("players").toString())));
-                }
-            }
-
-        } catch (Exception e) {
-            System.out.println("brak połaczenia");
-            e.printStackTrace();
         }
     }
 
     private void configureJoinButton() {
         joinRoomButton.setOnAction(actionEvent -> {
-            try {
-                refreshingTask.cancel();
-                if (roomsTable.getSelectionModel().getSelectedItem() != null) {
-                    if (roomsTable.getSelectionModel().getSelectedItem().getPlayers() < roomsTable.getSelectionModel().getSelectedItem().getMaxPlayers()) {
-                        roomId = roomsTable.getSelectionModel().getSelectedItem().getRoomId();
 
-                        JSONObject request = new JSONObject();
-                        request.put("request", "JOIN_ROOM");
-                        request.put("data", roomId);
-                        System.out.println(request);
-                        String response = WebSocketConnector.getInstance().dataTransfer(request.toString());
-                        System.out.println(request);
+            refreshingTask.cancel();
+            if (roomsTable.getSelectionModel().getSelectedItem() != null) {
+                if (roomsTable.getSelectionModel().getSelectedItem().getPlayers() < roomsTable.getSelectionModel().getSelectedItem().getMaxPlayers()) {
+                    roomId = roomsTable.getSelectionModel().getSelectedItem().getRoomId();
 
-                        JSONObject responseJson = new JSONObject(response);
-                        if (responseJson.get("message").equals("OK")) {
-                            changeToPlayerLobbyScene(joinRoomButton);
-                        }
+
+                    try {
+                        Thread.sleep(200);
+                    } catch (InterruptedException e) {
+                        //no need to catch, its only to avoid json crashing(two responses from server can come together)
+                    }
+
+                    JSONObject request = new JSONObject();
+                    request.put("request", "JOIN_ROOM");
+                    request.put("data", roomId);
+                    String response = sendRequest(request.toString());
+                    JSONObject responseJson = new JSONObject(response);
+                    if (responseJson.get("message").equals("OK")) {
+                        changeScene(Scenes.MULTI_PLAYER_LOBBY_SCENE, joinRoomButton);
                     }
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         });
     }
 
     private void configureBackButton() {
         backButton.setOnAction(actionEvent -> {
-            try {
-                refreshingTask.cancel();
-                changeToChooseOptionScene(backButton);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            refreshingTask.cancel();
+            changeScene(Scenes.MULTI_CHOOSE_OPTION_SCENE, backButton);
         });
     }
 }

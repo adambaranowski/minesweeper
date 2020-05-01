@@ -14,14 +14,17 @@ public class WebSocketConnector {
     private BufferedReader bufferedReader;
 
 
-    private WebSocketConnector(String serverAddress, int socketPort) throws IOException {
-        this.serverAddress = serverAddress;
-        this.socketPort = socketPort;
-        socket = new Socket(serverAddress, socketPort);
-        dout = new BufferedOutputStream(socket.getOutputStream());
-        din = new DataInputStream(socket.getInputStream());
-        bufferedReader = new BufferedReader(new InputStreamReader(din));
-
+    private WebSocketConnector(String serverAddress, int socketPort) {
+        try {
+            this.serverAddress = serverAddress;
+            this.socketPort = socketPort;
+            socket = new Socket(serverAddress, socketPort);
+            dout = new BufferedOutputStream(socket.getOutputStream());
+            din = new DataInputStream(socket.getInputStream());
+            bufferedReader = new BufferedReader(new InputStreamReader(din));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -48,14 +51,14 @@ public class WebSocketConnector {
 
     }
 
-    public static WebSocketConnector createInstance(String serverAddress, int socketPort) throws IOException {
+    public static WebSocketConnector createInstance(String serverAddress, int socketPort) {
         if (INSTANCE == null) {
             INSTANCE = new WebSocketConnector(serverAddress, socketPort);
         }
         return INSTANCE;
     }
 
-    public static WebSocketConnector getInstance() throws IOException {
+    public static WebSocketConnector getInstance() {
         if (INSTANCE != null) {
             return INSTANCE;
         }
