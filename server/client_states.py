@@ -44,13 +44,13 @@ def pre_lobby(conn, session_id, all_players, all_rooms):
                     new_room = Room(player.session_id, room_name)
 
                     player.set_room_id(new_room.room_id)
-                    new_room.add_player(player)
+                    new_room.add_player(player.session_id)
                     new_room.set_players_limit(room_size)
                     
                     all_rooms.add_room(new_room)
                     all_players.update_player(player)
 
-                    start_new_thread(room_thread, (new_room.room_id, all_rooms, ))
+                    start_new_thread(room_thread, (new_room.room_id, all_rooms))
 
 
                     reply = json.dumps({"message": "OK", "room_id": new_room.room_id})
@@ -87,11 +87,12 @@ def pre_lobby(conn, session_id, all_players, all_rooms):
                     else:
 
                         player.set_room_id(room_id)
-                        room.add_player(player)
+                        room.add_player(player.session_id)
 
                         all_rooms.update_room(room)
+                        all_players.update_player(player)
 
-                        room_info = room.get_info()
+                        room_info = room.get_info(all_players)
                         reply = json.dumps({"message": "OK", "room_info": json.dumps(room_info)})
 
                         reply = java_format(reply)
@@ -151,6 +152,14 @@ def in_lobby(conn, session_id, all_players, all_rooms):
     p = all_players.get_player(session_id)
     lobby = all_rooms.get_room(p.room_id)
 
+    data = ""
+
+    if not lobby:
+        reply = json.dumps({"message": "ROOM DELETED"})
+        reply = java_format(reply)
+        conn.sendall(str.encode(reply))
+        return True, False
+
     while not lobby.start_game:
 
         try:
@@ -170,10 +179,12 @@ def in_lobby(conn, session_id, all_players, all_rooms):
                 if lobby.host_id == session_id:
                     #kick everyone if host leaves
                     for p in lobby.players:
-                        print(len(lobby.players))
-
-                        p.set_room_id(None)
-                        all_players.update_player(p)
+                        #print(len(lobby.players))
+                        for player in all_players.players:
+                            if player.session_id == p:
+                                player.set_room_id(None)
+                                player.clear_stats()
+                                break
 
                     lobby.players = []
 
@@ -184,6 +195,7 @@ def in_lobby(conn, session_id, all_players, all_rooms):
                     lobby.remove_player(session_id)
 
                     p.set_room_id(None)
+                    p.total_score = 0
 
                     all_rooms.update_room(lobby)
                     all_players.update_player(p)
@@ -208,7 +220,7 @@ def in_lobby(conn, session_id, all_players, all_rooms):
                     return True, False
 
                 else:
-                    room_info = lobby.get_info()
+                    room_info = lobby.get_info(all_players)
                     reply = json.dumps({"message": "OK", "data": room_info})
 
                     reply = java_format(reply)
@@ -218,25 +230,14 @@ def in_lobby(conn, session_id, all_players, all_rooms):
             elif msg["request"] == "START_GAME":
                 if lobby.host_id == session_id:
 
+                    lobby.set_map(msg["data"]["map"], msg["data"]["start_point"])
                     lobby.start_countdown()
-
-                    reply = json.dumps({"message": "OK"})
-                    reply = java_format(reply)
-                    conn.sendall(str.encode(reply))
-
-            elif msg["request"] == "ADD_TIME":
-
-                if lobby.host_id == session_id:
-                    lobby.add_time()
-
                     all_rooms.update_room(lobby)
 
                     reply = json.dumps({"message": "OK"})
                     reply = java_format(reply)
                     conn.sendall(str.encode(reply))
-                else:
-                    reply = json.dumps({"message": "ONLY HOST CAN ADD TIME"})
-                    conn.sendall(str.encode(reply))
+
 
             elif msg["request"] == "KICK_PLAYER":
 
@@ -248,6 +249,8 @@ def in_lobby(conn, session_id, all_players, all_rooms):
                         kicked_player = all_players.get_player(kicked_id)
 
                         kicked_player.set_room_id(None)
+                        kicked_player.clear_stats()
+
                         lobby.remove_player(kicked_id)
 
                         all_rooms.update_room(lobby)
@@ -263,19 +266,10 @@ def in_lobby(conn, session_id, all_players, all_rooms):
                         conn.sendall(str.encode(reply))
 
             elif msg["request"] == "SET_SIZE":
+
                 if lobby.host_id == session_id:
                     new_size = msg["data"]
                     lobby.set_map_size(new_size)
-                    all_rooms.update_room(lobby)
-
-                    reply = json.dumps({"message": "OK"})
-                    reply = java_format(reply)
-                    conn.sendall(str.encode(reply))
-
-            elif msg["request"] == "SET_LIMIT":
-                if lobby.host_id == session_id:
-                    new_limit = msg["data"]
-                    lobby.set_players_limit(new_limit)
                     all_rooms.update_room(lobby)
 
                     reply = json.dumps({"message": "OK"})
@@ -286,6 +280,24 @@ def in_lobby(conn, session_id, all_players, all_rooms):
                     reply = json.dumps({"message": "ONLY HOST CAN EDIT ROOM SETTINGS"})
                     reply = java_format(reply)
                     conn.sendall(str.encode(reply))
+
+
+            elif msg["request"] == "SET_TIME":
+
+                if lobby.host_id == session_id:
+                    game_duration = msg["data"]
+                    lobby.set_game_duration(game_duration)
+                    all_rooms.update_room(lobby)
+
+                    reply = json.dumps({"message": "OK"})
+                    reply = java_format(reply)
+                    conn.sendall(str.encode(reply))
+
+                else:
+                    reply = json.dumps({"message": "ONLY HOST CAN EDIT ROOM SETTINGS"})
+                    reply = java_format(reply)
+                    conn.sendall(str.encode(reply))
+
 
             else:
                 reply = json.dumps({"message": "INCORRECT REQUEST TYPE"})
@@ -300,6 +312,7 @@ def in_lobby(conn, session_id, all_players, all_rooms):
 
         except Exception as e:
             print("lobby error", e)
+            print(data)
             reply = json.dumps({"message": "INCORRECT DATA FORMAT"})
             reply = java_format(reply)
             conn.sendall(str.encode(reply))
@@ -308,7 +321,6 @@ def in_lobby(conn, session_id, all_players, all_rooms):
         lobby = all_rooms.get_room(p.room_id)
         p = all_players.get_player(session_id)
 
-    #print("loop ended")
     return True, True
 
 
@@ -318,31 +330,63 @@ def in_game(conn, session_id, all_players, all_rooms):
     player = all_players.get_player(session_id)
     lobby = all_rooms.get_room(player.room_id)
 
-    while lobby.end_time > datetime.now():
 
+    if not lobby.can_request:
+        player.set_score(0)
+        all_players.update_player(player)
+
+
+    if not lobby:
+        print("[ERROR] How did he even get here", player.username)
+        return True
+
+    while lobby.end_time > datetime.now() or lobby.can_request:
+
+        req = "" #debugging variable
         try:
 
             request = conn.recv(2048).decode()
-
+            req = request
             json_data = json.loads(request)
 
             if json_data["request"] == "GET_INFO":
-                reply = json.dumps({"message": "OK", "data": lobby.get_info()})
+                reply = json.dumps({"message": "OK", "data": lobby.get_info(all_players)})
                 reply = java_format(reply)
                 conn.sendall(str.encode(reply))
 
-            elif json_data["request"] == "CLICK":
-                x, y = json_data["data"]["x"], json_data["data"]["y"]
-                print("Click on", x, y)
-
-                #validate
-
-                reply = json.dumps({"message": "OK", "data": 10})
+            elif json_data["request"] == "GET_MAP":
+                reply = json.dumps({"message": "OK", "data": {"map": lobby.map, "size": lobby.map_size, "start_point": lobby.start_point}})
                 reply = java_format(reply)
                 conn.sendall(str.encode(reply))
+
+            elif json_data["request"] == "UPDATE_SCORE":
+                new_score = json_data["data"]
+                player.set_score(new_score)
+                all_players.update_player(player)
+                print(player)
+
+
+                if new_score == 1.0:
+                    lobby.end_time = datetime.now()
+                    lobby.can_request = True
+                    all_rooms.update_room(lobby)
+
+                reply = json.dumps({"message": "OK"})
+                reply = java_format(reply)
+                conn.sendall(str.encode(reply))
+
+            elif json_data["request"] == "LOST":
+                lobby.players_over += 1
+
+                all_rooms.update_room(lobby)
+
+                reply = json.dumps({"message": "OK"})
+                reply = java_format(reply)
+                conn.sendall(str.encode(reply))
+
             else:
-                print(request.decode())
-                reply = json.dumps({"message": "REQUEST RECEIVED"})
+                print(request)
+                reply = json.dumps({"message": "INVALID REQUEST"})
                 reply = java_format(reply)
                 conn.sendall(str.encode(reply))
 
@@ -353,6 +397,7 @@ def in_game(conn, session_id, all_players, all_rooms):
 
         except Exception as e:
             print(e)
+            print(req)
             reply = json.dumps({"message": "INCORRECT DATA FORMAT"})
             reply = java_format(reply)
             conn.sendall(str.encode(reply))
@@ -360,11 +405,9 @@ def in_game(conn, session_id, all_players, all_rooms):
         lobby = all_rooms.get_room(player.room_id)
 
 
-    all_rooms.delete_room(player.room_id)
-    
-    player.set_room_id(None)
-    player.set_score(absolute=0)
-    all_players.update_player(player)
 
+    player.update_total()
+    all_players.update_player(player)
+    print(player, "updated")
     return True
 
